@@ -42,7 +42,7 @@ def win_border_padded (main_win :curses.window, border_height,
         win.border()
     return win
 
-def process_input(ch, input_chars, cursor_pos_offset, chat_focus, m_soc, onl_w_c_off, main_w_c_off) -> tuple[list, int, bool, int, int]:
+def process_input(ch, max_pad_off, input_chars, cursor_pos_offset, chat_focus, m_soc, onl_w_c_off, main_w_c_off, w_pad_off) -> tuple[list, int, bool, int, int]:
     if ch == 530:
         ch = 224
     if (ch == curses.KEY_BACKSPACE or ch == 8) and input_chars:
@@ -73,6 +73,11 @@ def process_input(ch, input_chars, cursor_pos_offset, chat_focus, m_soc, onl_w_c
     elif ch == curses.KEY_RIGHT or ch == 454:                   # arrow-right
         if cursor_pos_offset > 0:
             cursor_pos_offset-=1
+    elif ch == 544:                                             # alt arrow-left
+        if chat_focus:
+            w_pad_off = w_pad_off - 1 if w_pad_off > 0 else 0
+    elif ch == 559:                                             # alt arrow-right
+        w_pad_off = w_pad_off + 1 if w_pad_off < max_pad_off else max_pad_off
     elif ch == 490:                                             # alt + arrow-up
         if not chat_focus:
             onl_w_c_off += 10
@@ -104,7 +109,7 @@ def process_input(ch, input_chars, cursor_pos_offset, chat_focus, m_soc, onl_w_c
             input_chars.append(chr(ch))
         else:
             input_chars.insert(-cursor_pos_offset, chr(ch))
-    return input_chars, cursor_pos_offset, chat_focus, onl_w_c_off, main_w_c_off
+    return input_chars, cursor_pos_offset, chat_focus, onl_w_c_off, main_w_c_off, w_pad_off
 
 def unblock_win(win) -> None:
     win.timeout(1)
@@ -388,6 +393,7 @@ def main() -> None:
     chat_focus = True
     online_win_cursor_offset = 0
     main_win_cursor_offset = 0
+    windows_padding_offset = 0
 
     try:
         m_s, i_s = init_socekts(name, main_win)
@@ -396,9 +402,9 @@ def main() -> None:
         while True:
             max_y, max_x = main_win.getmaxyx()
 
-
-            chat_border_width = max_x // 4 * 3
-            online_border_width = max_x // 4
+            max_pad_off = max_x // 4 * 3 - 10
+            chat_border_width = max_x // 4 * 3 - windows_padding_offset
+            online_border_width = max_x // 4 + windows_padding_offset
 
             main_win.clear()
             main_win.refresh()
@@ -452,13 +458,15 @@ def main() -> None:
             if CONNECION_CLOSED:
                 raise Exception("Connection closed by the server")
 
-            input_chars, cursor_pos_offset, chat_focus, online_win_cursor_offset, main_win_cursor_offset = process_input(ch,
-                                                                                                                         input_chars,
-                                                                                                                         cursor_pos_offset,
-                                                                                                                         chat_focus,
-                                                                                                                         m_s,
-                                                                                                                         online_win_cursor_offset,
-                                                                                                                         main_win_cursor_offset)
+            input_chars, cursor_pos_offset, chat_focus, online_win_cursor_offset, main_win_cursor_offset, windows_padding_offset = process_input(ch,
+                                                                                                                                                 max_pad_off,
+                                                                                                                                                 input_chars,
+                                                                                                                                                 cursor_pos_offset,
+                                                                                                                                                 chat_focus,
+                                                                                                                                                 m_s,
+                                                                                                                                                 online_win_cursor_offset,
+                                                                                                                                                 main_win_cursor_offset,
+                                                                                                                                                 windows_padding_offset)
                 
     except KeyboardInterrupt:
         main_win.keypad(0)
