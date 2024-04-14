@@ -1,8 +1,5 @@
 import _curses as curses
-import socket, threading, time, ast
-from pylogging import Logger
-
-logging = Logger(file_logging=True)
+import socket, threading, time, ast, sys
 
 HOSTNAME = "127.0.0.1"
 MESSAGE_PORT = 8080
@@ -11,6 +8,39 @@ ONLINE_PEOPLE = []
 CHAT = []
 MAX_CHAT = 1000
 CONNECION_CLOSED = False
+
+class KeyCodes:
+    if sys.platform == "win32":
+        BACK_SPACE       = [8]
+        ENTER            = [10]
+        ARROW_DOWN       = [456, 258]
+        ARROW_UP         = [450, 259]
+        ARROW_LEFT       = [452, 260]
+        ARROW_RIGHT      = [454, 261]
+        ALT_ARROW_UP     = [490]
+        ALT_ARROW_DOWN   = [491]
+        ALT_ARROW_LEFT   = [493]
+        ALT_ARROW_RIGHT  = [492]
+        CTRL_ARROW_LEFT  = [511]
+        CTRL_ARROW_RIGHT = [513]
+        CTRL_BACKSPACE   = [23, 127]
+        TAB              = [9]
+        A_ACCENT         = [530]
+    elif sys.platform == "linux":
+        BACK_SPACE       = []
+        ENTER            = []
+        ARROW_DOWN       = []
+        ARROW_UP         = []
+        ARROW_LEFT       = []
+        ARROW_RIGHT      = []
+        ALT_ARROW_UP     = []
+        ALT_ARROW_DOWN   = []
+        ALT_ARROW_LEFT   = []
+        ALT_ARROW_RIGHT  = []
+        CTRL_ARROW_LEFT  = []
+        CTRL_ARROW_RIGHT = []
+        CTRL_BACKSPACE   = []
+        TAB              = []
 
 def try_exec(f) -> callable:
     def wrapper(*args, **kwargs):
@@ -43,72 +73,89 @@ def win_border_padded (main_win :curses.window, border_height,
     return win
 
 def process_input(ch, max_pad_off, input_chars, cursor_pos_offset, chat_focus, m_soc, onl_w_c_off, main_w_c_off, w_pad_off) -> tuple[list, int, bool, int, int]:
-    if ch == 530:
-        ch = 224
-    if (ch == curses.KEY_BACKSPACE or ch == 8) and input_chars:
+    if ch in KeyCodes.A_ACCENT:
+        ch = ord('à')
+
+    if ch in KeyCodes.BACK_SPACE and input_chars:
             input_chars.pop(-(cursor_pos_offset + 1))
-    elif ch == curses.KEY_ENTER or ch == 10:                    # enter
+    
+    elif ch in KeyCodes.ENTER:
         m_soc.sendall("".join(input_chars).encode())
         input_chars = []
-    elif ch == 23 or ch == 127:
+    
+    elif ch in KeyCodes.CTRL_BACKSPACE:
         while len(input_chars) - cursor_pos_offset > 0:
             if input_chars[-(cursor_pos_offset + 1)] != ' ':
                 input_chars.pop(-(cursor_pos_offset + 1))
             else:
                 input_chars.pop(-(cursor_pos_offset + 1))
                 break
-    elif ch == curses.KEY_DOWN or ch == 456:                    # arrow-down
+    
+    elif ch in KeyCodes.ARROW_DOWN:
         if not chat_focus:
             onl_w_c_off = onl_w_c_off - 1 if onl_w_c_off > 0 else 0 
         else:
             main_w_c_off = main_w_c_off - 1 if main_w_c_off > 0 else 0 
-    elif ch == curses.KEY_UP or ch == 450:                      # arrow-up
+    
+    elif ch in KeyCodes.ARROW_UP:
         if not chat_focus:
             onl_w_c_off += 1
         else:
             main_w_c_off += 1
-    elif ch == curses.KEY_LEFT or ch == 452:                    # arrow-left
+    
+    elif ch in KeyCodes.ARROW_LEFT:
         if  cursor_pos_offset < len(input_chars):
             cursor_pos_offset += 1
-    elif ch == curses.KEY_RIGHT or ch == 454:                   # arrow-right
+    
+    elif ch in KeyCodes.ARROW_RIGHT:
         if cursor_pos_offset > 0:
             cursor_pos_offset-=1
-    elif ch == 544:                                             # alt arrow-left
+    
+    elif ch in KeyCodes.ALT_ARROW_LEFT:
         if chat_focus:
             w_pad_off = w_pad_off - 1 if w_pad_off > 0 else 0
-    elif ch == 559:                                             # alt arrow-right
+    
+    elif ch in KeyCodes.ALT_ARROW_RIGHT:
         w_pad_off = w_pad_off + 1 if w_pad_off < max_pad_off else max_pad_off
-    elif ch == 490:                                             # alt + arrow-up
+    
+    elif ch in KeyCodes.ALT_ARROW_UP:
         if not chat_focus:
             onl_w_c_off += 10
         else:
             main_w_c_off += 10
-    elif ch == 491:                                             # alt + arrow-down
+    
+    elif ch in KeyCodes.ALT_ARROW_DOWN:
         if not chat_focus:
             onl_w_c_off = onl_w_c_off - 10 if onl_w_c_off - 10 > 0 else 0 
         else:
             main_w_c_off = main_w_c_off - 10 if main_w_c_off - 10 > 0 else 0 
-    elif ch == 443 or ch == 511:                                # ctrl + arrow-left
+    
+    elif ch in KeyCodes.CTRL_ARROW_LEFT:
         while len(input_chars) - cursor_pos_offset > 0:
             if input_chars[-(cursor_pos_offset + 1)] != ' ':
                 cursor_pos_offset += 1
             else:
                 cursor_pos_offset += 1
                 break
-    elif ch == 444 or ch == 513:                                # ctrl + arrow-right
+    
+    elif ch in KeyCodes.CTRL_ARROW_RIGHT:
         while cursor_pos_offset > 0:
             if input_chars[-(cursor_pos_offset)] != ' ':
                 cursor_pos_offset -= 1
             else:
                 cursor_pos_offset -= 1
                 break
-    elif ch == 9:                                               # tab
+    
+    elif ch in KeyCodes.TAB:
         chat_focus = not chat_focus
+    
     elif ch != 0 and ch != curses.KEY_RESIZE and ch >= 32 and chat_focus:
         if cursor_pos_offset == 0:
             input_chars.append(chr(ch))
         else:
             input_chars.insert(-cursor_pos_offset, chr(ch))
+    else:
+        pass
     return input_chars, cursor_pos_offset, chat_focus, onl_w_c_off, main_w_c_off, w_pad_off
 
 def unblock_win(win) -> None:
@@ -402,9 +449,9 @@ def main() -> None:
         while True:
             max_y, max_x = main_win.getmaxyx()
 
-            max_pad_off = max_x // 4 * 3 - 10
-            chat_border_width = max_x // 4 * 3 - windows_padding_offset
-            online_border_width = max_x // 4 + windows_padding_offset
+            max_pad_off = max_x // 5 * 4 - 10
+            chat_border_width = max_x // 5 * 4 - windows_padding_offset
+            online_border_width = max_x // 5 + windows_padding_offset
 
             main_win.clear()
             main_win.refresh()
@@ -508,6 +555,5 @@ def main() -> None:
 if __name__ == "__main__":
     main()
 
+#TODO: create a table for specific key-codes depending on platform 
 #TODO: find a way to avoid a client crash on excessive resize
-#TODO: check for linux fclicekring
-#TODO: check for linux input characters 
