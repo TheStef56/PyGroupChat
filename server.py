@@ -49,18 +49,20 @@ def messages_thread(conn, addr) -> None:
         return
     while True:
         try:
-            msg = conn.recv(8192).decode()
-
-            for char in msg:
-                if ord(char) < 32 and ord(char) != 10:
-                    raise Exception("Escape sequence detected")
-                
-            if msg == "":
+            msg = conn.recv(8192)
+            
+            if msg == b"" or msg == b"\xff":
                 logging.info(f"connection closed with {addr}")
                 MESSAGE_CLIENTS.pop(addr)
                 logging.info(f"{name} {addr} disconnected! ({len(MESSAGE_CLIENTS)} left)")
                 conn.close()
                 break
+            
+            msg = msg.decode()
+            for char in msg:
+                if ord(char) < 32 and ord(char) != 10:
+                    raise Exception("Escape sequence detected")
+                
             
             logging.info(f"message received from \"{name}\" {addr}: \"{msg}\"")
             
