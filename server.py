@@ -49,20 +49,18 @@ def messages_thread(conn, addr) -> None:
         return
     while True:
         try:
-            msg = conn.recv(8192)
-
-            if msg == b"" or msg == b'\x00\x00':
-                logging.info(f"connection closed with {addr}")
-                MESSAGE_CLIENTS.pop(addr)
-                logging.info(f"{name} {addr} disconnected! ({len(MESSAGE_CLIENTS)} left)")
-                break
-
-            msg = msg.decode()
+            msg = conn.recv(8192).decode()
 
             for char in msg:
                 if ord(char) < 32 and ord(char) != 10:
                     raise Exception("Escape sequence detected")
                 
+            if msg == "":
+                logging.info(f"connection closed with {addr}")
+                MESSAGE_CLIENTS.pop(addr)
+                logging.info(f"{name} {addr} disconnected! ({len(MESSAGE_CLIENTS)} left)")
+                conn.close()
+                break
             
             logging.info(f"message received from \"{name}\" {addr}: \"{msg}\"")
             
@@ -94,7 +92,7 @@ def info_thread(conn, addr) -> None:
         try:
             msg = conn.recv(8192)
             
-            if msg == b'' or msg == b'\x00\x00':
+            if msg == b'':
                 conn.close()
                 INFO_CLIENTS.pop(addr)
                 break

@@ -73,7 +73,7 @@ def win_border_padded (main_win :curses.window, border_height,
     return win
 
 def process_input(ch, max_pad_off, input_chars, cursor_pos_offset, chat_focus, m_soc, onl_w_c_off, main_w_c_off, w_pad_off) -> tuple[list, int, bool, int, int]:
-    if sys.platform == "win32" and ch in KeyCodes.A_ACCENT:
+    if ch in KeyCodes.A_ACCENT:
         ch = ord('à')
 
     if ch in KeyCodes.BACK_SPACE and input_chars:
@@ -537,16 +537,12 @@ def main() -> None:
                 
     except KeyboardInterrupt:
         uninit_curses(main_win)
-        i_s.sendall(b"\x00\x00")
-        m_s.sendall(b"\x00\x00")
         try_exec(i_s.close)()
         try_exec(m_s.close)()
         exit()
     except curses.error as e:
         uninit_curses(main_win)
         print(e)
-        i_s.sendall(b"\x00\x00")
-        m_s.sendall(b"\x00\x00")
         try_exec(i_s.close)()
         try_exec(m_s.close)()
         exit()
@@ -556,8 +552,6 @@ def main() -> None:
         main()
     except Exception as e:
         uninit_curses(main_win)
-        i_s.sendall(b"\x00\x00")
-        m_s.sendall(b"\x00\x00")
         try_exec(i_s.close)()
         try_exec(m_s.close)()
         print(e)
