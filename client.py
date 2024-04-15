@@ -423,17 +423,28 @@ def init_socekts(name, main_win) -> tuple[socket.socket, socket.socket]:
     threading.Thread(target=message_thread, args=[m_s, main_win]).start() 
     return m_s, i_s
 
-def main() -> None:
-    global CONNECION_CLOSED
-    try:
-        name = input("ENTER YOUR NAME: ")
-    except KeyboardInterrupt:
-        exit()
-    global ONLINE_PEOPLE
+def init_curses() -> curses.window:
     main_win = curses.initscr()
     curses.noecho()
     curses.cbreak()
     main_win.keypad(1)
+    return main_win
+
+def uninit_curses(main_win: curses.window) -> None:
+    main_win.keypad(0)
+    curses.echo()
+    curses.nocbreak()
+    curses.endwin()
+
+def main() -> None:
+    global CONNECION_CLOSED, ONLINE_PEOPLE
+    
+    try:
+        name = input("ENTER YOUR NAME: ")
+    except KeyboardInterrupt:
+        exit()
+
+    main_win = init_curses()
 
     input_chars = []
     cursor_pos_offset = 0
@@ -456,12 +467,16 @@ def main() -> None:
             main_win.clear()
             main_win.refresh()
 
-            container_chat_win, container_onl_win, chat_win, text_win, online_win = draw_win(main_win,
-                                                                                             max_y,
-                                                                                             max_x,
-                                                                                             chat_border_width,
-                                                                                             online_border_width,
-                                                                                             chat_focus)
+            (container_chat_win,
+            container_onl_win,
+            chat_win,
+            text_win,
+            online_win) = draw_win(main_win,
+                                   max_y,
+                                   max_x,
+                                   chat_border_width,
+                                   online_border_width,
+                                   chat_focus)
             
             
             text_win.refresh()
@@ -505,45 +520,38 @@ def main() -> None:
             if CONNECION_CLOSED:
                 raise Exception("Connection closed by the server")
 
-            input_chars, cursor_pos_offset, chat_focus, online_win_cursor_offset, main_win_cursor_offset, windows_padding_offset = process_input(ch,
-                                                                                                                                                 max_pad_off,
-                                                                                                                                                 input_chars,
-                                                                                                                                                 cursor_pos_offset,
-                                                                                                                                                 chat_focus,
-                                                                                                                                                 m_s,
-                                                                                                                                                 online_win_cursor_offset,
-                                                                                                                                                 main_win_cursor_offset,
-                                                                                                                                                 windows_padding_offset)
+            (input_chars,
+            cursor_pos_offset,
+            chat_focus,
+            online_win_cursor_offset,
+            main_win_cursor_offset,
+            windows_padding_offset) = process_input(ch,
+                                                    max_pad_off,
+                                                    input_chars,
+                                                    cursor_pos_offset,
+                                                    chat_focus,
+                                                    m_s,
+                                                    online_win_cursor_offset,
+                                                    main_win_cursor_offset,
+                                                    windows_padding_offset)
                 
     except KeyboardInterrupt:
-        main_win.keypad(0)
-        curses.echo()
-        curses.nocbreak()
-        curses.endwin()
+        uninit_curses(main_win)
         try_exec(i_s.close)()
         try_exec(m_s.close)()
         exit()
     except curses.error as e:
-        main_win.keypad(0)
-        curses.echo()
-        curses.nocbreak()
-        curses.endwin()
+        uninit_curses(main_win)
         print(e)
         try_exec(i_s.close)()
         try_exec(m_s.close)()
         exit()
     except ConnectionRefusedError:
-        main_win.keypad(0)
-        curses.echo()
-        curses.nocbreak()
-        curses.endwin()
+        uninit_curses(main_win)
         print("Unable to connect to server, retry:")
         main()
     except Exception as e:
-        main_win.keypad(0)
-        curses.echo()
-        curses.nocbreak()
-        curses.endwin()
+        uninit_curses(main_win)
         try_exec(i_s.close)()
         try_exec(m_s.close)()
         print(e)
