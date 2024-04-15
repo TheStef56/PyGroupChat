@@ -537,12 +537,16 @@ def main() -> None:
                 
     except KeyboardInterrupt:
         uninit_curses(main_win)
+        i_s.sendall(b"\x00\x00")
+        m_s.sendall(b"\x00\x00")
         try_exec(i_s.close)()
         try_exec(m_s.close)()
         exit()
     except curses.error as e:
         uninit_curses(main_win)
         print(e)
+        i_s.sendall(b"\x00\x00")
+        m_s.sendall(b"\x00\x00")
         try_exec(i_s.close)()
         try_exec(m_s.close)()
         exit()
@@ -552,6 +556,8 @@ def main() -> None:
         main()
     except Exception as e:
         uninit_curses(main_win)
+        i_s.sendall(b"\x00\x00")
+        m_s.sendall(b"\x00\x00")
         try_exec(i_s.close)()
         try_exec(m_s.close)()
         print(e)
