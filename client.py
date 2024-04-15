@@ -73,7 +73,7 @@ def win_border_padded (main_win :curses.window, border_height,
     return win
 
 def process_input(ch, max_pad_off, input_chars, cursor_pos_offset, chat_focus, m_soc, onl_w_c_off, main_w_c_off, w_pad_off) -> tuple[list, int, bool, int, int]:
-    if ch in KeyCodes.A_ACCENT:
+    if sys.platform == "win32" and ch in KeyCodes.A_ACCENT:
         ch = ord('à')
 
     if ch in KeyCodes.BACK_SPACE and input_chars:
