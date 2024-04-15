@@ -483,7 +483,7 @@ def main() -> None:
             chat_win.refresh()
             online_win.refresh()
 
-            try_exec(container_chat_win.addstr)(0, chat_border_width//2 - 5, "PyChat 1.1")
+            try_exec(container_chat_win.addstr)(0, chat_border_width//2 - 5, "PyChat 1.4")
             container_chat_win.refresh()
             
 
@@ -563,6 +563,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-#TODO: create a table for specific key-codes depending on platform 
-#TODO: find a way to avoid a client crash on excessive resize
