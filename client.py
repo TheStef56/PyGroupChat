@@ -537,7 +537,6 @@ def main() -> None:
                 
     except KeyboardInterrupt:
         uninit_curses(main_win)
-        m_s.sendall(b"\xff")
         try_exec(i_s.close)()
         try_exec(m_s.close)()
         exit()

@@ -51,7 +51,7 @@ def messages_thread(conn, addr) -> None:
         try:
             msg = conn.recv(8192)
             
-            if msg == b"" or msg == b"\xff":
+            if msg == b"":
                 logging.info(f"connection closed with {addr}")
                 MESSAGE_CLIENTS.pop(addr)
                 logging.info(f"{name} {addr} disconnected! ({len(MESSAGE_CLIENTS)} left)")
